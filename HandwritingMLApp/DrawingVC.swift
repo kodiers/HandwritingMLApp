@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import CoreML
+import Vision
 
 class DrawingVC: UIViewController {
 
@@ -63,8 +65,39 @@ class DrawingVC: UIViewController {
         drawingImageView.image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
     }
+    
+    func makePrediction(_ image: UIImage) {
+        guard let model = try? VNCoreMLModel(for: handwriting().model) else { return }
+        let request = VNCoreMLRequest(model: model, completionHandler: resultMethod)
+        guard let ciImage = CIImage(image: image) else { return }
+        let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
+        do {
+            try handler.perform([request])
+        } catch {
+            debugPrint(error)
+        }
+    }
+    
+    func resultMethod(request: VNRequest, error: Error?) {
+        guard let results = request.results else {
+            return
+        }
+    }
+    
+    func image(with image: UIImage, scaledTo newSize: CGSize) -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+        image.draw(in: CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height))
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        drawingImageView.image = newImage
+        return newImage ?? UIImage()
+    }
 
     @IBAction func predictBtnPressed(_ sender: Any) {
+        guard let predictionImage = drawingImageView.image else {
+            return
+        }
+        makePrediction(image(with: predictionImage, scaledTo: CGSize(width: 28.0, height: 28.0)))
     }
     
 }
