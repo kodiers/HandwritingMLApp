@@ -79,9 +79,20 @@ class DrawingVC: UIViewController {
     }
     
     func resultMethod(request: VNRequest, error: Error?) {
-        guard let results = request.results else {
-            return
+        guard let results = request.results, let resultsArray = results[0] as? VNCoreMLFeatureValueObservation, let multiArrayValue = resultsArray.featureValue.multiArrayValue else { return }
+        var prediction: NSNumber = 0
+        var compare: NSNumber = 0
+        var atIndex: Int = 0
+        var i: Int = 0
+        while i < multiArrayValue.count {
+            compare = multiArrayValue[i]
+            if compare.floatValue > prediction.floatValue {
+                prediction = compare
+                atIndex = i
+            }
+            i = i + 1
         }
+        predictionLbl.text = "Digit may be \(atIndex)"
     }
     
     func image(with image: UIImage, scaledTo newSize: CGSize) -> UIImage {
